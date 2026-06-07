@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plataforma DIT — Seguimiento de Iniciativas</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6fb; color: #2d2d3a; }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, #6A0572 0%, #9B2FA8 60%, #C56FD4 100%);
+    color: white; padding: 22px 32px; display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 3px 12px rgba(106,5,114,0.18);
+  }
+  .header h1 { font-size: 1.45rem; font-weight: 700; letter-spacing: 0.5px; }
+  .header .subtitle { font-size: 0.85rem; opacity: 0.85; margin-top: 3px; }
+  .header-right { display: flex; gap: 10px; align-items: center; }
+  .btn { padding: 8px 18px; border-radius: 7px; border: none; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.18s; }
+  .btn-white { background: white; color: #6A0572; }
+  .btn-white:hover { background: #f0d6f5; }
+  .btn-outline { background: transparent; color: white; border: 1.5px solid rgba(255,255,255,0.6); }
+  .btn-outline:hover { background: rgba(255,255,255,0.12); }
+
+  /* KPI CARDS */
+  .kpi-bar { display: flex; gap: 16px; padding: 20px 32px 0; flex-wrap: wrap; }
+  .kpi-card {
+    background: white; border-radius: 12px; padding: 16px 22px; flex: 1; min-width: 160px;
+    box-shadow: 0 2px 8px rgba(106,5,114,0.08); border-left: 4px solid #9B2FA8;
+  }
+  .kpi-card .kpi-label { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 0.6px; }
+  .kpi-card .kpi-value { font-size: 1.8rem; font-weight: 700; color: #6A0572; margin: 4px 0 2px; }
+  .kpi-card .kpi-sub { font-size: 0.78rem; color: #aaa; }
+  .kpi-card.alert { border-left-color: #e53e3e; }
+  .kpi-card.alert .kpi-value { color: #e53e3e; }
+  .kpi-card.ok { border-left-color: #38a169; }
+  .kpi-card.ok .kpi-value { color: #38a169; }
+  .kpi-card.warn { border-left-color: #d97706; }
+  .kpi-card.warn .kpi-value { color: #d97706; }
+
+  /* MAIN CONTENT */
+  .main { padding: 20px 32px 40px; }
+
+  /* TABS */
+  .tabs { display: flex; gap: 4px; margin-bottom: 18px; border-bottom: 2px solid #e8d5f0; }
+  .tab { padding: 9px 22px; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.88rem; font-weight: 600; color: #888; background: transparent; border: none; transition: all 0.15s; }
+  .tab.active { background: white; color: #6A0572; border-bottom: 3px solid #9B2FA8; margin-bottom: -2px; box-shadow: 0 -2px 8px rgba(106,5,114,0.08); }
+  .tab:hover:not(.active) { color: #9B2FA8; background: #f9f0fc; }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* TOOLBAR */
+  .toolbar { display: flex; gap: 10px; margin-bottom: 14px; align-items: center; flex-wrap: wrap; }
+  .toolbar input, .toolbar select {
+    padding: 7px 12px; border: 1.5px solid #ddd; border-radius: 7px; font-size: 0.84rem;
+    outline: none; transition: border 0.15s;
+  }
+  .toolbar input:focus, .toolbar select:focus { border-color: #9B2FA8; }
+  .toolbar input[type="text"] { min-width: 220px; }
+  .btn-purple { background: linear-gradient(135deg, #6A0572, #9B2FA8); color: white; }
+  .btn-purple:hover { background: linear-gradient(135deg, #560460, #7a2088); }
+  .btn-sm { padding: 6px 13px; font-size: 0.8rem; }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; border-radius: 12px; box-shadow: 0 2px 12px rgba(106,5,114,0.07); }
+  table { width: 100%; border-collapse: collapse; background: white; font-size: 0.83rem; }
+  th { background: linear-gradient(135deg, #6A0572, #9B2FA8); color: white; padding: 11px 12px; text-align: left; font-weight: 600; white-space: nowrap; }
+  td { padding: 9px 12px; border-bottom: 1px solid #f0e8f7; vertical-align: middle; }
+  tr:hover td { background: #fdf6ff; }
+  tr:last-child td { border-bottom: none; }
+
+  /* BADGES */
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
+  .badge-terminado { background: #d4edda; color: #155724; }
+  .badge-revision { background: #cce5ff; color: #004085; }
+  .badge-espera { background: #fff3cd; color: #856404; }
+  .badge-problema { background: #f8d7da; color: #721c24; }
+  .badge-descontinuado { background: #e2e3e5; color: #383d41; }
+  .badge-iniciada { background: #f0d6f5; color: #6A0572; }
+  .badge-diplade { background: #d6eaf8; color: #1a5276; }
+  .badge-dipir { background: #d5f5e3; color: #1e8449; }
+  .badge-default { background: #eee; color: #555; }
+
+  /* PROGRESS BAR */
+  .prog-wrap { display: flex; align-items: center; gap: 8px; min-width: 130px; }
+  .prog-bar { flex: 1; height: 8px; background: #eed9f5; border-radius: 4px; overflow: hidden; }
+  .prog-fill { height: 100%; border-radius: 4px; transition: width 0.4s; }
+  .prog-label { font-size: 0.78rem; font-weight: 700; color: #6A0572; min-width: 36px; text-align: right; }
+
+  /* ALERT ROW */
+  .row-alert td { background: #fff5f5 !important; }
+  .row-alert td:first-child { border-left: 3px solid #e53e3e; }
+  .row-warn td { background: #fffbf0 !important; }
+  .row-warn td:first-child { border-left: 3px solid #d97706; }
+
+  /* INLINE EDIT */
+  .editable-cell { cursor: pointer; }
+  .editable-cell:hover { background: #f9eeff !important; outline: 1.5px dashed #9B2FA8; border-radius: 4px; }
+  select.inline-edit, input.inline-edit {
+    border: 1.5px solid #9B2FA8; border-radius: 5px; padding: 3px 6px;
+    font-size: 0.82rem; background: #fff; width: 100%; min-width: 110px;
+  }
+
+  /* CHARTS TAB */
+  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .chart-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 10px rgba(106,5,114,0.08); }
+  .chart-card h3 { font-size: 0.92rem; color: #6A0572; margin-bottom: 14px; font-weight: 700; }
+  canvas { width: 100% !important; }
+
+  /* WEEKLY TAB */
+  .week-selector { display: flex; gap: 12px; align-items: center; margin-bottom: 18px; flex-wrap: wrap; }
+  .week-selector label { font-weight: 600; color: #6A0572; font-size: 0.88rem; }
+
+  /* MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 1000; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: white; border-radius: 16px; padding: 28px; max-width: 620px; width: 95%; box-shadow: 0 8px 40px rgba(106,5,114,0.18); max-height: 90vh; overflow-y: auto; }
+  .modal h2 { color: #6A0572; font-size: 1.1rem; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #e8d5f0; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group.full { grid-column: 1/-1; }
+  .form-group label { font-size: 0.8rem; font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: 0.4px; }
+  .form-group input, .form-group select, .form-group textarea {
+    padding: 8px 11px; border: 1.5px solid #ddd; border-radius: 7px; font-size: 0.85rem; outline: none;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #9B2FA8; }
+  .form-group textarea { resize: vertical; min-height: 70px; }
+  .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; padding-top: 14px; border-top: 1px solid #eee; }
+  .btn-cancel { background: #f0f0f0; color: #555; }
+
+  /* ALERTS PANEL */
+  .alerts-panel { background: white; border-radius: 12px; padding: 18px 22px; box-shadow: 0 2px 10px rgba(106,5,114,0.07); margin-bottom: 20px; }
+  .alerts-panel h3 { color: #6A0572; font-size: 0.92rem; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 7px; }
+  .alert-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5eaf9; font-size: 0.83rem; }
+  .alert-item:last-child { border-bottom: none; }
+  .alert-icon { font-size: 1rem; margin-top: 1px; }
+  .alert-text strong { display: block; color: #2d2d3a; }
+  .alert-text span { color: #888; font-size: 0.78rem; }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    .kpi-bar { padding: 16px; }
+    .main { padding: 14px 16px 30px; }
+    .charts-grid { grid-template-columns: 1fr; }
+    .form-grid { grid-template-columns: 1fr; }
+    .header { flex-direction: column; gap: 12px; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div>
+    <div class="header h1" style="font-size:1.45rem;font-weight:700;">📋 Plataforma DIT — Seguimiento de Iniciativas</div>
+    <div class="subtitle">Región de Los Ríos · Gestión y Control Semanal · 2025</div>
+  </div>
+  <div class="header-right">
+    <button class="btn btn-outline" onclick="exportCSV()">⬇ Exportar CSV</button>
+    <button class="btn btn-white" onclick="openModal()">+ Nueva Iniciativa</button>
+  </div>
+</div>
+
+<!-- KPI BAR -->
+<div class="kpi-bar" id="kpiBar">
+  <!-- filled by JS -->
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('tab-table', this)">📄 Iniciativas</button>
+    <button class="tab" onclick="showTab('tab-weekly', this)">📅 Avance Semanal</button>
+    <button class="tab" onclick="showTab('tab-charts', this)">📊 Visualizaciones</button>
+    <button class="tab" onclick="showTab('tab-alerts', this)">🚨 Alertas</button>
+  </div>
+
+  <!-- TAB: TABLA PRINCIPAL -->
+  <div id="tab-table" class="tab-content active">
+    <div class="toolbar">
+      <input type="text" id="searchBox" placeholder="🔍 Buscar iniciativa, responsable, comuna..." oninput="filterTable()">
+      <select id="filterEstado" onchange="filterTable()">
+        <option value="">Todos los estados</option>
+        <option>Terminado</option>
+        <option>En Revisión</option>
+        <option>Esperando Respuesta</option>
+        <option>En Problemas</option>
+        <option>Descontinuado por mandante</option>
+        <option>No Iniciada</option>
+        <option>En DIPLADE</option>
+        <option>En DIPIR</option>
+      </select>
+      <select id="filterCategoria" onchange="filterTable()">
+        <option value="">Todas las categorías</option>
+        <option>Programa</option>
+        <option>Conservación</option>
+        <option>Estudio</option>
+        <option>Menor a 5000 UTM</option>
+        <option>Otras Gestiones</option>
+      </select>
+      <button class="btn btn-purple btn-sm" onclick="openModal()">+ Agregar</button>
+    </div>
+    <div class="table-wrap">
+      <table id="mainTable">
+        <thead>
+          <tr>
+            <th>N°</th>
+            <th>Iniciativa / Tarea</th>
+            <th>Código BIP</th>
+            <th>Categoría</th>
+            <th>Comuna</th>
+            <th>Mandante</th>
+            <th>Responsable</th>
+            <th>Hito</th>
+            <th>Estado</th>
+            <th>% Avance</th>
+            <th>Comentario</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB: AVANCE SEMANAL -->
+  <div id="tab-weekly" class="tab-content">
+    <div class="week-selector">
+      <label>Mes:</label>
+      <select id="selMes" onchange="renderWeekly()">
+        <option value="Junio">Junio</option><option value="Julio">Julio</option>
+        <option value="Agosto">Agosto</option><option value="Septiembre">Septiembre</option>
+        <option value="Octubre">Octubre</option><option value="Noviembre">Noviembre</option>
+        <option value="Diciembre">Diciembre</option>
+      </select>
+      <label>Semana:</label>
+      <select id="selSemana" onchange="renderWeekly()">
+        <option>Semana1</option><option>Semana2</option><option>Semana3</option><option>Semana4</option>
+      </select>
+      <button class="btn btn-purple btn-sm" onclick="saveWeeklyProgress()">💾 Guardar Avances</button>
+    </div>
+    <div class="table-wrap">
+      <table id="weeklyTable">
+        <thead>
+          <tr>
+            <th>Iniciativa</th>
+            <th>Responsable</th>
+            <th>Estado Actual</th>
+            <th>% Avance Actual</th>
+            <th>Nuevo % Avance</th>
+            <th>Nuevo Estado</th>
+            <th>Comentario Semana</th>
+          </tr>
+        </thead>
+        <tbody id="weeklyBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB: VISUALIZACIONES -->
+  <div id="tab-charts" class="tab-content">
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h3>📊 Distribución por Estado</h3>
+        <canvas id="chartEstado" height="220"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>📂 Iniciativas por Categoría</h3>
+        <canvas id="chartCategoria" height="220"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>📈 % Avance por Iniciativa</h3>
+        <canvas id="chartAvance" height="260"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>👤 Iniciativas por Responsable</h3>
+        <canvas id="chartResp" height="220"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: ALERTAS -->
+  <div id="tab-alerts" class="tab-content">
+    <div class="alerts-panel" id="alertsPanel">
+      <h3>🚨 Panel de Alertas Activas</h3>
+      <div id="alertsList"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL NUEVA/EDITAR INICIATIVA -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2 id="modalTitle">➕ Nueva Iniciativa</h2>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>Iniciativa / Tarea</label>
+        <textarea id="fTarea" rows="3" placeholder="Descripción completa de la iniciativa..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Código BIP</label>
+        <input type="text" id="fBip" placeholder="Ej: 40012345">
+      </div>
+      <div class="form-group">
+        <label>Categoría</label>
+        <select id="fCategoria">
+          <option>Programa</option><option>Conservación</option><option>Estudio</option>
+          <option>Menor a 5000 UTM</option><option>Otras Gestiones</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Comuna</label>
+        <select id="fComuna">
+          <option>Valdivia</option><option>Corral</option><option>Mariquina</option><option>Mafil</option>
+          <option>Los Lagos</option><option>Paillaco</option><option>Lanco</option><option>Panguipulli</option>
+          <option>La Unión</option><option>Futrono</option><option>Lago Ranco</option><option>Río Bueno</option><option>Regional</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Mandante</label>
+        <select id="fMandante">
+          <option>Muni Valdivia</option><option>Muni Corral</option><option>Muni Mariquina</option>
+          <option>Muni Mafil</option><option>Muni Los Lagos</option><option>Muni Paillaco</option>
+          <option>Muni Lanco</option><option>Muni Panguipulli</option><option>Muni La Unión</option>
+          <option>Muni Futrono</option><option>Muni Lago Ranco</option><option>Muni Río Bueno</option>
+          <option>GORE</option><option>Junji</option><option>Salud</option><option>MOP</option><option>Minvu</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Responsable</label>
+        <select id="fResponsable">
+          <option>Mauricio Jelves</option><option>Karim Bertin</option><option>Armin Fernandez</option>
+          <option>Claudia Salazar</option><option>Joel Duran</option><option>Miguel Angel Martinez</option>
+          <option>Rodrigo Leiva</option><option>Valeska Barria</option><option>Yenny Mendez</option>
+          <option>Claudia Donner</option><option>Margorie Contreras</option><option>Carlos Ferrer</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Hito</label>
+        <select id="fHito">
+          <option>Certificado RS Gore</option><option>Informe Técnico con Observación</option>
+          <option>En Revisión</option><option>Terminado</option><option>Informe Técnico Continuidad</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Estado de Avance</label>
+        <select id="fEstado">
+          <option>No Iniciada</option><option>En Revisión</option><option>Esperando Respuesta</option>
+          <option>En DIPLADE</option><option>En DIPIR</option><option>Descontinuado por mandante</option>
+          <option>En Problemas</option><option>Terminado</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>% Avance (0 a 1)</label>
+        <input type="number" id="fAvance" min="0" max="1" step="0.05" value="0" placeholder="0.0 – 1.0">
+      </div>
+      <div class="form-group full">
+        <label>Comentario Actualizado</label>
+        <textarea id="fComentario" rows="2" placeholder="Observaciones, novedades..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-purple" onclick="saveInitiative()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===================== DATA =====================
+let initiatives = [
+  { id:1, tarea:"PROGRAMA FORTALECIMIENTO TÉCNICO Y OPERATIVO DEL SISTEMA SANITARIO RURAL DE NELTUME, PANGUIPULLI", bip:"50002208", categoria:"Programa", comuna:"Panguipulli", mandante:"Muni Panguipulli", responsable:"Mauricio Jelves", hito:"Certificado RS Gore", estado:"Terminado", avance:1, comentario:"Programa presentado y aprobado en el CORE", weekly:{} },
+  { id:2, tarea:"CONSTRUCCION MULTICANCHA TECHADA Y CERRADA ESCUELA ALBERTO CORDOVA LATORRE, LANCO", bip:"40069170", categoria:"Menor a 5000 UTM", comuna:"Lanco", mandante:"Muni Lanco", responsable:"Mauricio Jelves", hito:"Informe Técnico con Observación", estado:"Descontinuado por mandante", avance:1, comentario:"Enviadas observaciones y mandante lo ingresará como proyecto tradicional FNDR", weekly:{} },
+  { id:3, tarea:"CONSERVACIÓN ESTADIO CENTENARIO DE LA UNIÓN", bip:"40076916", categoria:"Programa", comuna:"La Unión", mandante:"Muni La Unión", responsable:"Mauricio Jelves", hito:"Informe Técnico con Observación", estado:"Esperando Respuesta", avance:1, comentario:"", weekly:{} },
+  { id:4, tarea:"CONSERVACIÓN MEJORAMIENTO DE ENVOLVENTE TÉRMICA JARDÍN CAMPANITA", bip:"40071333", categoria:"Conservación", comuna:"Valdivia", mandante:"Junji", responsable:"Mauricio Jelves", hito:"Informe Técnico con Observación", estado:"Esperando Respuesta", avance:0.8, comentario:"", weekly:{} },
+  { id:5, tarea:"CONSERVACIÓN MEJORAMIENTO DE ENVOLVENTE TÉRMICA JARDÍN CARRUSEL", bip:"40071978", categoria:"Conservación", comuna:"Valdivia", mandante:"Junji", responsable:"Mauricio Jelves", hito:"Informe Técnico con Observación", estado:"Esperando Respuesta", avance:0.8, comentario:"", weekly:{} },
+  { id:6, tarea:"Curso de Inteligencia Artificial HAZLO CON IA", bip:"-", categoria:"Otras Gestiones", comuna:"Regional", mandante:"GORE", responsable:"Mauricio Jelves", hito:"Terminado", estado:"Terminado", avance:1, comentario:"Curso terminado y certificado enviado", weekly:{} },
+  { id:7, tarea:"Curso de Soluciones Basadas en la Naturaleza SBN", bip:"-", categoria:"Otras Gestiones", comuna:"Regional", mandante:"GORE", responsable:"Mauricio Jelves", hito:"Terminado", estado:"Terminado", avance:1, comentario:"Curso terminado y a la espera de certificado", weekly:{} },
+  { id:8, tarea:"ESTUDIO DIAGNÓSTICO DE INFRAESTRUCTURA CULTURAL PARA LAS ARTES ESCÉNICAS Y MUSICALES, REGIÓN DE LOS RÍOS", bip:"40052466", categoria:"Estudio", comuna:"Regional", mandante:"GORE", responsable:"Mauricio Jelves", hito:"En Revisión", estado:"En Revisión", avance:0.6, comentario:"", weekly:{} },
+  { id:9, tarea:"Conservación Hospital de San José de la Mariquina", bip:"40065236", categoria:"Conservación", comuna:"Mariquina", mandante:"Salud", responsable:"Mauricio Jelves", hito:"En Revisión", estado:"En Revisión", avance:0.5, comentario:"", weekly:{} },
+];
+
+let editIndex = null;
+let nextId = 10;
+
+// ===================== UTILS =====================
+function badgeClass(estado) {
+  const map = {
+    "Terminado":"badge-terminado","En Revisión":"badge-revision",
+    "Esperando Respuesta":"badge-espera","En Problemas":"badge-problema",
+    "Descontinuado por mandante":"badge-descontinuado","No Iniciada":"badge-iniciada",
+    "En DIPLADE":"badge-diplade","En DIPIR":"badge-dipir"
+  };
+  return map[estado] || "badge-default";
+}
+function progColor(p) {
+  if (p >= 0.9) return "#38a169";
+  if (p >= 0.6) return "#9B2FA8";
+  if (p >= 0.3) return "#d97706";
+  return "#e53e3e";
+}
+function rowAlertClass(item) {
+  if (item.estado === "En Problemas") return "row-alert";
+  if (item.estado === "Esperando Respuesta") return "row-warn";
+  return "";
+}
+
+// ===================== RENDER TABLE =====================
+function renderTable(data) {
+  const tbody = document.getElementById("tableBody");
+  tbody.innerHTML = "";
+  data.forEach((item, idx) => {
+    const pct = Math.round(item.avance * 100);
+    const tr = document.createElement("tr");
+    tr.className = rowAlertClass(item);
+    tr.innerHTML = `
+      <td>${item.id}</td>
+      <td style="max-width:280px;min-width:180px;">${item.tarea}</td>
+      <td>${item.bip}</td>
+      <td>${item.categoria}</td>
+      <td>${item.comuna}</td>
+      <td>${item.mandante}</td>
+      <td>${item.responsable}</td>
+      <td style="max-width:160px;">${item.hito}</td>
+      <td><span class="badge ${badgeClass(item.estado)}">${item.estado}</span></td>
+      <td>
+        <div class="prog-wrap">
+          <div class="prog-bar"><div class="prog-fill" style="width:${pct}%;background:${progColor(item.avance)}"></div></div>
+          <span class="prog-label">${pct}%</span>
+        </div>
+      </td>
+      <td style="max-width:180px;font-size:0.78rem;color:#666;">${item.comentario || '—'}</td>
+      <td>
+        <button class="btn btn-sm" style="background:#f0d6f5;color:#6A0572;margin-right:4px;" onclick="editItem(${idx})">✏️</button>
+        <button class="btn btn-sm" style="background:#fff0f0;color:#c53030;" onclick="deleteItem(${idx})">🗑</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ===================== FILTER =====================
+function filterTable() {
+  const q = document.getElementById("searchBox").value.toLowerCase();
+  const est = document.getElementById("filterEstado").value;
+  const cat = document.getElementById("filterCategoria").value;
+  const filtered = initiatives.filter(i =>
+    (i.tarea.toLowerCase().includes(q) || i.responsable.toLowerCase().includes(q) || i.comuna.toLowerCase().includes(q)) &&
+    (est === "" || i.estado === est) &&
+    (cat === "" || i.categoria === cat)
+  );
+  renderTable(filtered);
+}
+
+// ===================== KPI =====================
+function renderKPIs() {
+  const total = initiatives.length;
+  const terminados = initiatives.filter(i => i.estado === "Terminado").length;
+  const problemas = initiatives.filter(i => i.estado === "En Problemas").length;
+  const avgAvance = Math.round(initiatives.reduce((s,i) => s+i.avance,0)/total*100);
+  const kpiBar = document.getElementById("kpiBar");
+  kpiBar.innerHTML = `
+    <div class="kpi-card"><div class="kpi-label">Total Iniciativas</div><div class="kpi-value">${total}</div><div class="kpi-sub">registradas</div></div>
+    <div class="kpi-card ok"><div class="kpi-label">Terminadas</div><div class="kpi-value">${terminados}</div><div class="kpi-sub">${Math.round(terminados/total*100)}% del total</div></div>
+    <div class="kpi-card warn"><div class="kpi-label">En Espera / Revisión</div><div class="kpi-value">${initiatives.filter(i=>i.estado==="Esperando Respuesta"||i.estado==="En Revisión").length}</div><div class="kpi-sub">requieren seguimiento</div></div>
+    <div class="kpi-card ${problemas>0?"alert":"ok"}"><div class="kpi-label">Con Problemas</div><div class="kpi-value">${problemas}</div><div class="kpi-sub">requieren atención urgente</div></div>
+    <div class="kpi-card"><div class="kpi-label">Avance Promedio</div><div class="kpi-value">${avgAvance}%</div><div class="kpi-sub">del portafolio</div></div>`;
+}
+
+// ===================== MODAL =====================
+function openModal(idx) {
+  editIndex = idx !== undefined ? idx : null;
+  const modal = document.getElementById("modalOverlay");
+  document.getElementById("modalTitle").textContent = editIndex !== null ? "✏️ Editar Iniciativa" : "➕ Nueva Iniciativa";
+  if (editIndex !== null) {
+    const i = initiatives[editIndex];
+    document.getElementById("fTarea").value = i.tarea;
+    document.getElementById("fBip").value = i.bip;
+    document.getElementById("fCategoria").value = i.categoria;
+    document.getElementById("fComuna").value = i.comuna;
+    document.getElementById("fMandante").value = i.mandante;
+    document.getElementById("fResponsable").value = i.responsable;
+    document.getElementById("fHito").value = i.hito;
+    document.getElementById("fEstado").value = i.estado;
+    document.getElementById("fAvance").value = i.avance;
+    document.getElementById("fComentario").value = i.comentario;
+  } else {
+    document.getElementById("fTarea").value="";
+    document.getElementById("fBip").value="";
+    document.getElementById("fAvance").value="0";
+    document.getElementById("fComentario").value="";
+  }
+  modal.classList.add("open");
+}
+function closeModal() { document.getElementById("modalOverlay").classList.remove("open"); }
+function editItem(idx) { openModal(idx); }
+function deleteItem(idx) {
+  if (!confirm("¿Eliminar esta iniciativa?")) return;
+  initiatives.splice(idx, 1);
+  refreshAll();
+}
+function saveInitiative() {
+  const item = {
+    id: editIndex !== null ? initiatives[editIndex].id : nextId++,
+    tarea: document.getElementById("fTarea").value,
+    bip: document.getElementById("fBip").value,
+    categoria: document.getElementById("fCategoria").value,
+    comuna: document.getElementById("fComuna").value,
+    mandante: document.getElementById("fMandante").value,
+    responsable: document.getElementById("fResponsable").value,
+    hito: document.getElementById("fHito").value,
+    estado: document.getElementById("fEstado").value,
+    avance: parseFloat(document.getElementById("fAvance").value) || 0,
+    comentario: document.getElementById("fComentario").value,
+    weekly: editIndex !== null ? initiatives[editIndex].weekly : {}
+  };
+  if (!item.tarea.trim()) { alert("La iniciativa debe tener un nombre."); return; }
+  if (editIndex !== null) initiatives[editIndex] = item;
+  else initiatives.push(item);
+  closeModal();
+  refreshAll();
+}
+
+// ===================== WEEKLY =====================
+function renderWeekly() {
+  const mes = document.getElementById("selMes").value;
+  const semana = document.getElementById("selSemana").value;
+  const key = mes+"_"+semana;
+  const tbody = document.getElementById("weeklyBody");
+  tbody.innerHTML = "";
+  initiatives.forEach((item, idx) => {
+    const weekVal = item.weekly[key] || {};
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td style="max-width:220px;font-size:0.81rem;">${item.tarea.substring(0,70)}${item.tarea.length>70?"...":""}</td>
+      <td>${item.responsable}</td>
+      <td><span class="badge ${badgeClass(item.estado)}">${item.estado}</span></td>
+      <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:${Math.round(item.avance*100)}%;background:${progColor(item.avance)}"></div></div><span class="prog-label">${Math.round(item.avance*100)}%</span></div></td>
+      <td><input type="number" class="inline-edit" data-idx="${idx}" data-key="${key}" id="wAvance_${idx}" min="0" max="100" step="5" value="${weekVal.avance !== undefined ? weekVal.avance : Math.round(item.avance*100)}" style="width:70px;"></td>
+      <td><select class="inline-edit" data-idx="${idx}" id="wEstado_${idx}">
+        ${["No Iniciada","En Revisión","Esperando Respuesta","En DIPLADE","En DIPIR","Descontinuado por mandante","En Problemas","Terminado"].map(e=>`<option${(weekVal.estado||item.estado)===e?" selected":""}>${e}</option>`).join("")}
+      </select></td>
+      <td><input type="text" class="inline-edit" id="wComent_${idx}" style="min-width:160px;" placeholder="Comentario semana..." value="${weekVal.comentario||""}"></td>`;
+    tbody.appendChild(tr);
+  });
+}
+function saveWeeklyProgress() {
+  const mes = document.getElementById("selMes").value;
+  const semana = document.getElementById("selSemana").value;
+  const key = mes+"_"+semana;
+  initiatives.forEach((item, idx) => {
+    const a = parseFloat(document.getElementById("wAvance_"+idx).value) / 100;
+    const e = document.getElementById("wEstado_"+idx).value;
+    const c = document.getElementById("wComent_"+idx).value;
+    item.weekly[key] = { avance: parseFloat(document.getElementById("wAvance_"+idx).value), estado: e, comentario: c };
+    item.avance = a;
+    item.estado = e;
+    if (c) item.comentario = c;
+  });
+  refreshAll();
+  alert("✅ Avances de "+semana+" de "+mes+" guardados correctamente.");
+}
+
+// ===================== CHARTS =====================
+let chartInstances = {};
+function renderCharts() {
+  const estados = {};
+  const categorias = {};
+  const responsables = {};
+  initiatives.forEach(i => {
+    estados[i.estado] = (estados[i.estado]||0)+1;
+    categorias[i.categoria] = (categorias[i.categoria]||0)+1;
+    responsables[i.responsable] = (responsables[i.responsable]||0)+1;
+  });
+  const purples = ["#6A0572","#9B2FA8","#C56FD4","#DFA8E8","#F5DFF8","#7B2D9C","#E080D0","#B345C5"];
+
+  function makeChart(id, type, labels, data, colors, opts) {
+    if (chartInstances[id]) chartInstances[id].destroy();
+    const ctx = document.getElementById(id).getContext("2d");
+    chartInstances[id] = new Chart(ctx, {
+      type, data: { labels, datasets:[{ data, backgroundColor: colors, borderColor: colors.map(c=>c), borderWidth:1.5 }] },
+      options: { responsive:true, plugins:{ legend:{ position:"bottom", labels:{ font:{size:11}, padding:10 } } }, ...opts }
+    });
+  }
+
+  makeChart("chartEstado","doughnut", Object.keys(estados), Object.values(estados), purples.slice(0,Object.keys(estados).length), {});
+  makeChart("chartCategoria","pie", Object.keys(categorias), Object.values(categorias), purples.slice(0,Object.keys(categorias).length), {});
+  makeChart("chartAvance","bar",
+    initiatives.map(i=>i.tarea.substring(0,25)+"..."),
+    initiatives.map(i=>Math.round(i.avance*100)),
+    initiatives.map(i=>progColor(i.avance)),
+    { indexAxis:"y", plugins:{ legend:{display:false} }, scales:{ x:{min:0,max:100, ticks:{callback:v=>v+"%"}} } }
+  );
+  makeChart("chartResp","bar", Object.keys(responsables), Object.values(responsables),
+    purples.slice(0,Object.keys(responsables).length),
+    { plugins:{ legend:{display:false} }, scales:{ y:{beginAtZero:true} } }
+  );
+}
+
+// ===================== ALERTS =====================
+function renderAlerts() {
+  const list = document.getElementById("alertsList");
+  const alerts = [];
+  initiatives.forEach(i => {
+    if (i.estado === "En Problemas")
+      alerts.push({ icon:"🔴", text: i.tarea.substring(0,60)+"...", sub:`Responsable: ${i.responsable} · Estado: En Problemas · Avance: ${Math.round(i.avance*100)}%` });
+    if (i.avance < 0.3 && i.estado !== "Terminado" && i.estado !== "Descontinuado por mandante")
+      alerts.push({ icon:"🟠", text: i.tarea.substring(0,60)+"...", sub:`Avance bajo (${Math.round(i.avance*100)}%) · Responsable: ${i.responsable}` });
+    if (i.estado === "Esperando Respuesta")
+      alerts.push({ icon:"🟡", text: i.tarea.substring(0,60)+"...", sub:`Esperando respuesta del mandante: ${i.mandante}` });
+  });
+  if (alerts.length === 0) {
+    list.innerHTML = "<div style='color:#38a169;padding:10px;'>✅ Sin alertas activas en este momento.</div>";
+  } else {
+    list.innerHTML = alerts.map(a=>`
+      <div class="alert-item">
+        <span class="alert-icon">${a.icon}</span>
+        <div class="alert-text"><strong>${a.text}</strong><span>${a.sub}</span></div>
+      </div>`).join("");
+  }
+  // update tab badge
+  document.querySelectorAll(".tab")[3].textContent = `🚨 Alertas (${alerts.length})`;
+}
+
+// ===================== EXPORT =====================
+function exportCSV() {
+  const headers = ["ID","Iniciativa","BIP","Categoría","Comuna","Mandante","Responsable","Hito","Estado","% Avance","Comentario"];
+  const rows = initiatives.map(i=>[i.id,`"${i.tarea}"`,i.bip,i.categoria,i.comuna,i.mandante,i.responsable,i.hito,i.estado,Math.round(i.avance*100)+"%",`"${i.comentario}"`]);
+  const csv = [headers.join(","), ...rows.map(r=>r.join(","))].join("\n");
+  const a = document.createElement("a");
+  a.href = "data:text/csv;charset=utf-8,\uFEFF"+encodeURIComponent(csv);
+  a.download = "Seguimiento_DIT_"+new Date().toISOString().slice(0,10)+".csv";
+  a.click();
+}
+
+// ===================== TABS =====================
+function showTab(id, btn) {
+  document.querySelectorAll(".tab-content").forEach(t=>t.classList.remove("active"));
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  btn.classList.add("active");
+  if (id === "tab-charts") setTimeout(renderCharts, 50);
+  if (id === "tab-weekly") renderWeekly();
+  if (id === "tab-alerts") renderAlerts();
+}
+
+// ===================== REFRESH ALL =====================
+function refreshAll() {
+  renderKPIs();
+  filterTable();
+  renderAlerts();
+}
+
+// ===================== INIT =====================
+window.onload = function() {
+  // Load Chart.js from CDN
+  const s = document.createElement("script");
+  s.src = "https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js";
+  s.onload = () => { refreshAll(); };
+  document.head.appendChild(s);
+  refreshAll();
+};
+</script>
+</body>
+</html>
